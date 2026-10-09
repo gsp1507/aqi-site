@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Air Quality India – City AQI{% endblock %}
+{% block body %}
+<h1>Air quality in Indian cities</h1>
+<p class="sub">AQI recorded at CPCB stations, {{ meta.date_from }} to {{ meta.date_to }}. Latest value is the last day with a valid reading in the dataset.</p>
+
+<div class="grid g4" style="margin-bottom:16px">
+  <div class="card stat"><b>{{ meta.n_cities }}</b><span>cities with city-level data</span></div>
+  <div class="card stat"><b>{{ meta.n_stations }}</b><span>monitoring stations</span></div>
+  <div class="card stat"><b>{{ '{:,}'.format(meta.n_city_days) }}</b><span>city-day records</span></div>
+  <div class="card stat"><b>{{ '{:,}'.format(meta.n_station_days) }}</b><span>station-day records</span></div>
+</div>
+
+<div class="legend" style="margin-bottom:18px">
+{% for name, rng, txt in bands %}
+  <div><div class="h b-{{ name|slug }}"><span>{{ name }}</span><span>{{ rng }}</span></div><p>{{ txt }}</p></div>
+{% endfor %}
+</div>
+
+<div class="bar">
+  <input type="text" id="q" placeholder="Search city or state…" oninput="filterTable('ct', this, [])">
+  <span class="note" style="align-self:center">Showing <span id="ct-count">{{ cities|length }}</span> cities. Click a column heading to sort.</span>
+</div>
+<div class="tw"><table class="js-table" id="ct">
+<thead><tr>
+  <th class="s">City</th><th class="s">State</th>
+  <th class="s n">Latest AQI</th><th class="s">Category</th>
+  <th class="s n">Average AQI</th><th class="s n">Days recorded</th>
+</tr></thead><tbody>
+{% for c in cities %}
+<tr>
+  <td><a href="{{ url_for('city', name=c.name) }}">{{ c.name }}</a></td>
+  <td>{{ c.state }}</td>
+  <td class="n" data-v="{{ c.latest_aqi if c.latest_aqi is not none else -1 }}">{{ c.latest_aqi|num }}</td>
+  <td>{% if c.bucket %}<span class="chip b-{{ c.bucket|slug }}">{{ c.bucket }}</span>{% else %}–{% endif %}</td>
+  <td class="n">{{ c.avg_aqi|num }}</td>
+  <td class="n">{{ '{:,}'.format(c.records) }}</td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+
+<div class="grid g2" style="margin-top:20px">
+  <div><h2>Highest average AQI</h2><div class="card" style="padding:4px 12px">
+    <table>{% for c in worst %}<tr><td><a href="{{ url_for('city', name=c.name) }}">{{ c.name }}</a></td><td class="n">{{ c.avg_aqi|num }}</td></tr>{% endfor %}</table></div></div>
+  <div><h2>Lowest average AQI</h2><div class="card" style="padding:4px 12px">
+    <table>{% for c in best %}<tr><td><a href="{{ url_for('city', name=c.name) }}">{{ c.name }}</a></td><td class="n">{{ c.avg_aqi|num }}</td></tr>{% endfor %}</table></div></div>
+</div>
+{% endblock %}

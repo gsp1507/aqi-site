@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Stations – Air Quality India{% endblock %}
+{% block body %}
+<h1>Monitoring stations</h1>
+<p class="sub">All {{ stations|length }} stations in stations.csv, with their last valid daily AQI from station_day data.</p>
+<div class="bar">
+  <input type="text" id="q" placeholder="Search station, city…" oninput="doF()">
+  <select id="st" data-key="state" onchange="doF()"><option value="">All states</option>{% for s in states %}<option>{{ s }}</option>{% endfor %}</select>
+  <select id="su" data-key="status" onchange="doF()"><option value="">Any status</option><option>Active</option><option>Inactive</option><option>Unknown</option></select>
+  <span class="note" style="align-self:center"><span id="stt-count">{{ stations|length }}</span> shown</span>
+</div>
+<div class="tw"><table class="js-table" id="stt">
+<thead><tr><th class="s">ID</th><th class="s">Station</th><th class="s">City</th><th class="s">State</th><th class="s">Status</th>
+<th class="s n">Latest AQI</th><th class="s">Category</th><th class="s">Last date</th><th class="s n">Average AQI</th><th class="s n">Daily records</th>{% if meta.hourly.station_hour %}<th class="s n">Hourly records</th>{% endif %}</tr></thead><tbody>
+{% for s in stations %}
+<tr data-state="{{ s.state }}" data-status="{{ s.status }}">
+<td>{{ s.id }}</td><td>{{ s.name }}</td><td>{{ s.city }}</td><td>{{ s.state }}</td><td>{{ s.status }}</td>
+<td class="n" data-v="{{ s.latest_aqi if s.latest_aqi is not none else -1 }}">{{ s.latest_aqi|num }}</td>
+<td>{% if s.bucket %}<span class="chip b-{{ s.bucket|slug }}">{{ s.bucket }}</span>{% else %}–{% endif %}</td>
+<td>{{ s.latest_date or '–' }}</td><td class="n">{{ s.avg_aqi|num }}</td><td class="n">{{ '{:,}'.format(s.records) }}</td>
+{% if meta.hourly.station_hour %}<td class="n">{{ '{:,}'.format(s.hourly_records) if s.hourly_records else '–' }}</td>{% endif %}
+</tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}
+{% block scripts %}<script>
+function doF(){filterTable('stt', document.getElementById('q'), [document.getElementById('st'), document.getElementById('su')]);}
+</script>{% endblock %}

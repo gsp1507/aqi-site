@@ -1,0 +1,84 @@
+{
+ "results": [
+  {
+   "model": "Linear Regression",
+   "MAE": 34.2598,
+   "MSE": 2917.8957,
+   "RMSE": 54.0176,
+   "R2": 0.8378
+  },
+  {
+   "model": "Decision Tree",
+   "MAE": 24.4941,
+   "MSE": 1992.8118,
+   "RMSE": 44.6409,
+   "R2": 0.8892
+  },
+  {
+   "model": "Random Forest",
+   "MAE": 19.528,
+   "MSE": 1408.9867,
+   "RMSE": 37.5365,
+   "R2": 0.9217
+  }
+ ],
+ "time_split": {
+  "model": "Random Forest (time split: train <2019-07, test >=2019-07)",
+  "MAE": 18.1973,
+  "MSE": 827.3902,
+  "RMSE": 28.7644,
+  "R2": 0.9326
+ },
+ "importance": [
+  [
+   "PM2.5",
+   0.6617
+  ],
+  [
+   "CO",
+   0.1948
+  ],
+  [
+   "PM10",
+   0.0671
+  ],
+  [
+   "NO",
+   0.0234
+  ],
+  [
+   "O3",
+   0.0169
+  ],
+  [
+   "NOx",
+   0.0085
+  ],
+  [
+   "NO2",
+   0.0076
+  ],
+  [
+   "SO2",
+   0.0069
+  ],
+  [
+   "Toluene",
+   0.0053
+  ],
+  [
+   "Benzene",
+   0.0042
+  ],
+  [
+   "NH3",
+   0.0036
+  ]
+ ],
+ "train_rows": 89500,
+ "test_rows": 22375,
+ "sources": [
+  "city_day",
+  "station_day"
+ ]
+}

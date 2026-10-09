@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Air Quality India{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head><body>
+<header class="top"><div class="wrap">
+  <a class="brand" href="/" style="text-decoration:none">Air Quality <span>India</span></a>
+  <nav>
+    <a href="/" class="{{ 'on' if request.path=='/' }}">Cities</a>
+    <a href="/stations" class="{{ 'on' if request.path.startswith('/stations') }}">Stations</a>
+    <a href="/predict" class="{{ 'on' if request.path.startswith('/predict') }}">Predict AQI</a>
+    <a href="/model" class="{{ 'on' if request.path.startswith('/model') }}">About the model</a>
+  </nav>
+</div></header>
+<main><div class="wrap">{% block body %}{% endblock %}</div></main>
+<footer><div class="wrap">
+  Data: Air Quality Data in India ({{ meta.date_from }} – {{ meta.date_to }}), CPCB monitoring stations. Historical data, not live.
+  Predictions are model estimates and do not replace official readings. &nbsp;|&nbsp; BABMH203 Intelligent Systems mini project.
+</div></footer>
+<script src="{{ url_for('static', filename='site.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body></html>

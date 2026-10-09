@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}About the model – Air Quality India{% endblock %}
+{% block body %}
+<h1>About the model</h1>
+<p class="sub">How the AQI predictor was built and how well it works.</p>
+
+<div class="card">
+<h2 style="margin-top:0">What it does</h2>
+<p>A Random Forest regression model estimates AQI from 11 pollutant measurements (PM2.5, PM10, NO, NO₂, NOx, NH₃, CO, SO₂, O₃, benzene, toluene). It was trained on {{ '{:,}'.format(m.train_rows + m.test_rows) }} daily observations from the city-level and station-level files together. Missing pollutant values are filled with the training-set median.</p>
+<p class="note">It estimates the AQI for the readings you give it. It does not forecast tomorrow's AQI.</p>
+</div>
+
+<h2>Model comparison (random 80:20 split, held-out test set of {{ '{:,}'.format(m.test_rows) }} rows)</h2>
+<div class="tw"><table>
+<thead><tr><th>Model</th><th class="n">MAE</th><th class="n">MSE</th><th class="n">RMSE</th><th class="n">R²</th></tr></thead><tbody>
+{% for r in m.results %}<tr><td>{{ r.model }}</td><td class="n">{{ '%.2f'|format(r.MAE) }}</td><td class="n">{{ '%.0f'|format(r.MSE) }}</td><td class="n">{{ '%.2f'|format(r.RMSE) }}</td><td class="n">{{ '%.4f'|format(r.R2) }}</td></tr>{% endfor %}
+{% if m.time_split %}<tr><td>{{ m.time_split.model }}</td><td class="n">{{ '%.2f'|format(m.time_split.MAE) }}</td><td class="n">{{ '%.0f'|format(m.time_split.MSE) }}</td><td class="n">{{ '%.2f'|format(m.time_split.RMSE) }}</td><td class="n">{{ '%.4f'|format(m.time_split.R2) }}</td></tr>{% endif %}
+</tbody></table></div>
+
+<div class="grid g2" style="margin-top:16px">
+  <div class="card"><h2 style="margin-top:0">Which pollutants matter most</h2><div class="chartbox"><canvas id="fi"></canvas></div>
+    <p class="note">Model-based importance shows what the model relies on. It does not prove a pollutant causes high AQI.</p></div>
+  <div class="card"><h2 style="margin-top:0">Limitations</h2>
+    <ul class="plain">
+      <li>AQI is calculated from pollutant levels, so this is estimation, not future forecasting.</li>
+      <li>Data ends {{ meta.date_to }}; the site shows history, not live air quality.</li>
+      <li>Missing values are filled with medians, which can hide local patterns.</li>
+      <li>Extreme AQI values strongly affect MSE and RMSE.</li>
+      <li>Not a replacement for official CPCB readings.</li>
+    </ul></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='chart.umd.js') }}"></script>
+<script>
+var I = {{ m.importance|tojson }};
+new Chart(document.getElementById('fi'), {type:'bar',
+  data:{labels:I.map(x=>x[0]), datasets:[{data:I.map(x=>x[1]), backgroundColor:'#0b5cad'}]},
+  options:{indexAxis:'y', responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}}});
+</script>{% endblock %}

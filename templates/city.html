@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ c.name }} – Air Quality India{% endblock %}
+{% block body %}
+<p class="note"><a href="/">← All cities</a></p>
+<h1>{{ c.name }}{% if c.state and c.state != c.name %}, {{ c.state }}{% endif %}</h1>
+<p class="sub">{{ '{:,}'.format(c.records) }} days with a valid AQI between {{ meta.date_from }} and {{ meta.date_to }}.</p>
+
+<div class="grid g4">
+  <div class="card stat"><b>{{ c.latest_aqi|num }} {% if c.bucket %}<span class="chip b-{{ c.bucket|slug }}" style="font-size:12px;vertical-align:middle">{{ c.bucket }}</span>{% endif %}</b><span>Latest reading ({{ c.latest_date }})</span></div>
+  <div class="card stat"><b>{{ c.avg_aqi|num }}</b><span>Average AQI, whole period</span></div>
+  <div class="card stat"><b>{{ c.worst.aqi|num if c.worst else '–' }}</b><span>Worst day{% if c.worst %} ({{ c.worst.date }}){% endif %}</span></div>
+  <div class="card stat"><b>{{ c.stations|length }}</b><span>stations in this city</span></div>
+</div>
+
+<div class="grid g2">
+  <div class="card"><h2 style="margin-top:0">Monthly average AQI</h2><div class="chartbox"><canvas id="mChart"></canvas></div></div>
+  <div class="card"><h2 style="margin-top:0">Yearly average AQI</h2><div class="chartbox"><canvas id="yChart"></canvas></div></div>
+  <div class="card"><h2 style="margin-top:0">Days by category</h2><div class="chartbox"><canvas id="bChart"></canvas></div></div>
+  <div class="card"><h2 style="margin-top:0">Average pollutant levels</h2><div class="chartbox"><canvas id="pChart"></canvas></div></div>
+</div>
+
+{% if c.hour_profile %}
+<div class="card"><h2 style="margin-top:0">Typical PM2.5 through the day</h2>
+  <p class="note">Average over all hourly readings, by hour of day (from city_hour data).</p>
+  <div class="chartbox"><canvas id="hChart"></canvas></div></div>
+{% endif %}
+
+{% if c.stations %}
+<h2>Stations in {{ c.name }}</h2>
+<div class="tw"><table>
+<thead><tr><th>Station</th><th>Status</th><th class="n">Latest AQI</th><th>Category</th><th class="n">Average AQI</th>{% if meta.hourly.station_hour %}<th class="n">Hourly records</th>{% endif %}</tr></thead><tbody>
+{% for s in c.stations %}<tr>
+<td>{{ s.name }}</td><td>{{ s.status }}</td><td class="n">{{ s.latest_aqi|num }}</td>
+<td>{% if s.bucket %}<span class="chip b-{{ s.bucket|slug }}">{{ s.bucket }}</span>{% else %}–{% endif %}</td>
+<td class="n">{{ s.avg_aqi|num }}</td>
+{% if meta.hourly.station_hour %}<td class="n">{{ '{:,}'.format(s.hourly_records) if s.hourly_records else '–' }}</td>{% endif %}
+</tr>{% endfor %}
+</tbody></table></div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='chart.umd.js') }}"></script>
+<script>
+var C = {{ c|tojson }};
+var COL = {"Good":"#00a650","Satisfactory":"#7fbf3f","Moderate":"#f2c200","Poor":"#f58220","Very Poor":"#e0262b","Severe":"#8b0a1a"};
+Chart.defaults.font.family = "Segoe UI, Roboto, Arial, sans-serif";
+var opt = {responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}};
+new Chart(document.getElementById('mChart'), {type:'line',
+  data:{labels:C.monthly.map(x=>x[0]), datasets:[{data:C.monthly.map(x=>x[1]), borderColor:'#0b5cad', borderWidth:1.5, pointRadius:0, tension:.2}]},
+  options:Object.assign({}, opt, {scales:{x:{ticks:{maxTicksLimit:8}}}})});
+new Chart(document.getElementById('yChart'), {type:'bar',
+  data:{labels:C.yearly.map(x=>x[0]), datasets:[{data:C.yearly.map(x=>x[1]), backgroundColor:'#0b5cad'}]}, options:opt});
+var order = ["Good","Satisfactory","Moderate","Poor","Very Poor","Severe"];
+new Chart(document.getElementById('bChart'), {type:'bar',
+  data:{labels:order, datasets:[{data:order.map(k=>C.bucket_counts[k]||0), backgroundColor:order.map(k=>COL[k])}]}, options:opt});
+var pk = Object.keys(C.pollutants);
+new Chart(document.getElementById('pChart'), {type:'bar',
+  data:{labels:pk, datasets:[{data:pk.map(k=>C.pollutants[k]), backgroundColor:'#5b6b7c'}]},
+  options:Object.assign({}, opt, {scales:{y:{type:'logarithmic', title:{display:true,text:'mean value (log scale)'}}}})});
+if (C.hour_profile) {
+  new Chart(document.getElementById('hChart'), {type:'line',
+    data:{labels:C.hour_profile.map((_,i)=>i+':00'), datasets:[{data:C.hour_profile.map(x=>x[0]), borderColor:'#e0262b', borderWidth:2, pointRadius:2, tension:.3}]}, options:opt});
+}
+</script>
+{% endblock %}

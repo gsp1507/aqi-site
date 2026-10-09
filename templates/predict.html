@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Predict AQI – Air Quality India{% endblock %}
+{% block body %}
+<h1>Predict AQI from pollutant readings</h1>
+<p class="sub">Enter the readings you have. Leave a box empty and the typical (median) value from the training data is used. At least PM2.5 or PM10, plus one more value, is required.</p>
+
+{% if error %}<div class="err">{{ error }}</div>{% endif %}
+
+<form method="post" class="card">
+  <div class="fgrid">
+  {% for key, label, unit, hint in fields %}
+    <div><label for="{{ key }}">{{ label }} <small>{{ unit }}</small></label>
+    <input type="number" step="any" min="0" id="{{ key }}" name="{{ key }}" value="{{ form.get(key, '') }}" placeholder="{{ hint }}"></div>
+  {% endfor %}
+  </div>
+  <p style="margin:14px 0 4px"><label style="font-weight:400"><input type="checkbox" name="sensitive" {{ 'checked' if form.get('sensitive') }}> I'm (or I'm advising) a child, an older adult, or someone with asthma / heart disease</label></p>
+  <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+    <button type="submit">Predict AQI</button>
+    <button type="button" class="alt" onclick="fillEx('clean')">Example: clean day</button>
+    <button type="button" class="alt" onclick="fillEx('typical')">Example: typical city day</button>
+    <button type="button" class="alt" onclick="fillEx('smog')">Example: heavy smog</button>
+    <button type="button" class="alt" onclick="document.querySelectorAll('.fgrid input').forEach(i=>i.value='')">Clear</button>
+  </div>
+</form>
+
+{% if result %}
+<div class="card result" id="res" data-b="{{ result.bucket|slug }}">
+  <div><div class="note">Predicted AQI</div><div class="big">{{ result.aqi }}</div>
+    <div class="note">likely range {{ result.low }} – {{ result.high }}</div></div>
+  <div style="flex:1;min-width:240px">
+    <span class="chip b-{{ result.bucket|slug }}" style="font-size:15px;padding:3px 12px">{{ result.bucket }}</span>
+    <p style="margin:10px 0 4px"><b>What to do:</b> {{ result.advice }}</p>
+    {% if form.get('sensitive') %}<p style="margin:4px 0"><b>For sensitive groups:</b> {{ result.advice_sensitive }}</p>{% endif %}
+    <p class="note" style="margin:8px 0 0">Based on {{ result.n_given }} entered value{{ 's' if result.n_given != 1 }}.
+    {% if result.filled_by_default %}Typical values were used for: {{ result.filled_by_default|join(', ') }}.{% endif %}</p>
+  </div>
+</div>
+{% endif %}
+
+<p class="note">The "likely range" is the 10th–90th percentile spread across the 100 trees of the Random Forest. It shows how much the trees disagree; it is not a guaranteed error bound.</p>
+{% endblock %}
+{% block scripts %}<script>
+var EX = {
+ clean:  {"PM2.5":18,"PM10":40,"NO":4,"NO2":12,"NOx":10,"NH3":10,"CO":0.4,"SO2":8,"O3":30,"Benzene":0.5,"Toluene":1.5},
+ typical:{"PM2.5":60,"PM10":120,"NO":10,"NO2":25,"NOx":25,"NH3":18,"CO":1,"SO2":10,"O3":35,"Benzene":1.5,"Toluene":4},
+ smog:   {"PM2.5":250,"PM10":420,"NO":40,"NO2":70,"NOx":90,"NH3":40,"CO":3,"SO2":20,"O3":40,"Benzene":5,"Toluene":10}
+};
+function fillEx(k){Object.keys(EX[k]).forEach(function(f){document.getElementById(f).value=EX[k][f];});}
+</script>{% endblock %}
